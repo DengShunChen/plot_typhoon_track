@@ -54,15 +54,15 @@ def get_data(filename):
     model_name_str = "GFS_UNKNOWN"  # Placeholder, as model name is not in the data file
     dtg_ini_str = ""
     dtg_end_str = ""
-    
+
     best_track_lats = []
     best_track_lons = []
     best_track_dtgs = []
-    
+
     ensemble_tracks_lats = []
     ensemble_tracks_lons = []
     ensemble_tracks_dtgs = []
-    
+
     taus = [] # List to store forecast hours (tau) from the file
 
     try:
@@ -78,7 +78,7 @@ def get_data(filename):
         f.close()
         print(f"Error: File {filename} is empty or header line 1 is missing.")
         return [[], [], [], [], [], [], "", "", "", model_name_str]
-        
+
     dtg_ini_str = header_line1[0]
     # num_typhoons = int(header_line1[4]) # This info is parsed but not directly used in the returned structure.
 
@@ -97,11 +97,11 @@ def get_data(filename):
         if "typh-name=" in part: # part could be "typh-name=GUCHOL" or "typh-name="
             name_part_index = i
             break
-    
+
     if name_part_index != -1:
         current_part = header_line2[name_part_index] # e.g., "typh-name=" or "typh-name=GUCHOL"
         split_current_part = current_part.split('=', 1) # Split only on the first '=' (safer)
-        
+
         # Case A: Name is attached to the token, e.g., "typh-name=GUCHOL"
         if len(split_current_part) > 1 and split_current_part[1] != '':
             typhoon_name_str = split_current_part[1]
@@ -145,7 +145,7 @@ def get_data(filename):
         except ValueError:
             print(f"Warning: Could not parse tau value '{tau_str}' as integer. Skipping line: {line_content.strip()}")
             continue
-            
+
         taus.append(current_tau_hours)
         last_tau_hours = current_tau_hours
 
@@ -205,7 +205,7 @@ def get_data(filename):
                 ensemble_tracks_lons[current_line_member_idx].append(lon_ens)
                 ensemble_tracks_dtgs[current_line_member_idx].append(dtg_for_points)
             current_line_member_idx += 1
-        
+
         # If this line has fewer members than established, pad with NaNs for this tau step
         if len(ensemble_tracks_lats) > 0 : # Only if ensembles have been initialized
             for member_idx in range(current_line_member_idx, len(ensemble_tracks_lats)):
@@ -253,7 +253,7 @@ def plot_map(typhoon_name, model_name, map_boundaries, default_boundaries=[80,0,
     # current set_map returns defaults if it cannot compute, so map_boundaries should always be valid.
     # For simplicity, the parameter map_boundaries in the definition takes default_boundaries if not passed,
     # so we just use map_boundaries directly.
-    
+
     fig, ax = plt.subplots(figsize=(16,8))
   
     # Setup Lambert Conformal Conic map projection.
@@ -262,13 +262,13 @@ def plot_map(typhoon_name, model_name, map_boundaries, default_boundaries=[80,0,
                 lon_0=map_boundaries[4],
                 projection='lcc', lat_1=10., lat_2=40.,
                 resolution ='l', area_thresh=1000., ax=ax)
-                
+
     # Draw map features
     m.drawcoastlines()
     m.drawcountries()
     m.drawmapboundary(fill_color='white') # Fill ocean areas
     m.fillcontinents(color='burlywood',lake_color='white') # Fill continents and lakes
-    
+
     # Draw parallels (latitude lines) and meridians (longitude lines)
     m.drawparallels(np.arange(15,70,20),labels=[1,1,0,0]) # Labels: [left,right,top,bottom]
     m.drawmeridians(np.arange(80,190,20),labels=[0,0,0,1])
@@ -296,7 +296,7 @@ def set_map(all_lats_np, all_lons_np, all_dtgs_np, dtg_end_val):
   # Filter out NaN values from latitude and longitude arrays.
   # DTGs corresponding to NaN lat/lon are also removed by this indexing.
   valid_points_idx = ~np.isnan(all_lats_np) & ~np.isnan(all_lons_np)
-  
+
   filtered_lats = all_lats_np[valid_points_idx]
   filtered_lons = all_lons_np[valid_points_idx]
   filtered_dtgs = all_dtgs_np[valid_points_idx]
@@ -304,7 +304,7 @@ def set_map(all_lats_np, all_lons_np, all_dtgs_np, dtg_end_val):
   # Apply time boundary condition: select points up to or at dtg_end_val.
   # DTG strings (e.g., "17090600") can be compared lexicographically for this format.
   time_bound_idx = filtered_dtgs <= dtg_end_val
-  
+
   final_lats = filtered_lats[time_bound_idx]
   final_lons = filtered_lons[time_bound_idx]
 
@@ -346,11 +346,11 @@ if __name__ == '__main__':
   # --- Process Each Input File ---
   for filename in filenames:
     print(f"Processing file: {filename}")
-    
+
     # --- Get Track Data ---
     # Data is returned as a list, see get_data docstring for structure.
     data = get_data(filename)
-    
+
     # Unpack data from the list returned by get_data
     ensemble_lats_raw = data[0] # List of lists of latitudes for ensemble tracks
     ensemble_lons_raw = data[1] # List of lists of longitudes for ensemble tracks
@@ -367,7 +367,7 @@ if __name__ == '__main__':
     if not typhoon_name or not best_lats_raw:
         print(f"Skipping {filename} due to missing typhoon name or essential best track data.")
         continue
-    
+
     # --- Prepare Data for Map Boundary Calculation (set_map) ---
     # Convert best track data to NumPy arrays for easier manipulation
     best_lats_np = np.asarray(best_lats_raw, dtype=np.float64)
@@ -382,7 +382,7 @@ if __name__ == '__main__':
     for track_lats in ensemble_lats_raw: all_lats_list.extend(track_lats)
     for track_lons in ensemble_lons_raw: all_lons_list.extend(track_lons)
     for track_dtgs in ensemble_dtgs_raw: all_dtgs_list.extend(track_dtgs)
-    
+
     # Convert combined lists to NumPy arrays
     temp_all_lats_np = np.asarray(all_lats_list, dtype=np.float64)
     temp_all_lons_np = np.asarray(all_lons_list, dtype=np.float64)
@@ -393,19 +393,19 @@ if __name__ == '__main__':
     all_lats_for_set_map = temp_all_lats_np[~nan_mask_formap]
     all_lons_for_set_map = temp_all_lons_np[~nan_mask_formap]
     all_dtgs_for_set_map = temp_all_dtgs_np[~nan_mask_formap]
-    
+
     # --- Determine Map Boundaries ---
     map_boundaries = set_map(all_lats_for_set_map, all_lons_for_set_map, all_dtgs_for_set_map, dtg_end_str)
-    
+
     # Print information for the current plot
     print('Initial/End DTG = ', dtg_ini_str, dtg_end_str)
     print('Typhoon Name = ', typhoon_name)
     print('Model Name = ', model_name)
     print('Map View Boundaries (lllon,lllat,urlon,urlat,lon0) = ', map_boundaries)
-    
+
     # --- Plot Map and Tracks ---
     fig, ax, m = plot_map(typhoon_name, model_name, map_boundaries)
-    
+
     # Plot ensemble forecast tracks
     lcolor_ens = 'r' # Color for ensemble tracks
     for i in range(len(ensemble_lats_raw)): # Iterate through each ensemble member
@@ -419,17 +419,17 @@ if __name__ == '__main__':
       plot_lats_ens = current_ens_lats[nan_mask_ens]
       plot_lons_ens = current_ens_lons[nan_mask_ens]
       plot_dtgs_ens = current_ens_dtgs[nan_mask_ens]
-      
+
       # Filter by dtg_end_str (plot points up to or at the end DTG)
       time_mask_ens = plot_dtgs_ens <= dtg_end_str
       final_lats_ens = plot_lats_ens[time_mask_ens]
       final_lons_ens = plot_lons_ens[time_mask_ens]
-      
+
       # Plot if there are any valid points remaining
       if final_lats_ens.size > 0:
           x_ens, y_ens = m(final_lons_ens, final_lats_ens) # Convert to map projection coordinates
           m.plot(x_ens, y_ens, color=lcolor_ens, alpha=0.7) # Plot with some transparency
-    
+
     # Plot best track
     lcolor_best = 'b' # Color for best track
     # Best track data (best_lats_np, etc.) already converted to NumPy arrays earlier
@@ -447,7 +447,7 @@ if __name__ == '__main__':
     if final_lats_best.size > 0:
         x_best, y_best = m(final_lons_best, final_lats_best) # Convert to map projection coordinates
         m.plot(x_best, y_best, color=lcolor_best, linewidth=1.5, label='Best Track')
-    
+
     # --- Add Period Annotation and Legend ---
     cperiod = str(dtg_ini_str)+' - '+str(dtg_end_str) # Create period string
     # Position for annotation (slightly offset from map corner)
