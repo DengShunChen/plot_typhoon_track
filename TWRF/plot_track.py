@@ -131,9 +131,23 @@ def get_data(filename) :
 
   return [big_lat, big_lon, big_dtg, best_lat, best_lon, best_dtg, dtg_ini, dtg_end, name, model]  
 
-def set_map(lat,lon,blat,blon):
+def set_map(lat, lon, dtg, dtg_end, blat, blon):
+  """Compute map boundaries for plotting.
+
+  Args:
+      lat (np.ndarray): Latitude array of forecast tracks.
+      lon (np.ndarray): Longitude array of forecast tracks.
+      dtg (np.ndarray): Date-time group array corresponding to ``lat``/``lon``.
+      dtg_end (int): Last DTG to include when computing boundaries.
+      blat (np.ndarray): Latitude array of the best track.
+      blon (np.ndarray): Longitude array of the best track.
+
+  Returns:
+      list: [llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, lon_0]
+  """
+
   # find the max latitude and longitude
-  indx = np.logical_and(lat > 0,dtg <= dtg_end) 
+  indx = np.logical_and(lat > 0, dtg <= dtg_end)
   lat_max = lat[indx].max()
   lat_min = lat[indx].min()
   lon_max = lon[indx].max()
@@ -182,7 +196,7 @@ if __name__ == '__main__':
     name = data[8]
     model = data[9]
     
-    set_val = set_map(lat,lon,blat,blon)
+    set_val = set_map(lat, lon, dtg, dtg_end, blat, blon)
     
     # pre-define parameters
     print('ini/end = ',dtg_ini,dtg_end)
